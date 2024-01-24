@@ -1,0 +1,16 @@
+[package]
+name = "darkmap"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sam Lakerveld <dark@dark.red>"]
+default-run = "darkmap"
+
+[dependencies]
+bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy_atmosphere = "0.8.1"
+bevy_egui = "0.24.0"
+bevy-inspector-egui = "0.22.1"
+bevy_panorbit_camera = "0.10.0"
+bevy_mod_picking = { version = "0.17.0", default-features = false, features = [
+    "bevy_text", "bevy_ui", "highlight", "selection", "backend_raycast", "backend_sprite", "backend_egui"
+] }
