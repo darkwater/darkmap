@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use geo::{Coord, LineString, Point, Polygon, Rect};
+use geo::{Coord, LineString, MultiPolygon, Point, Polygon, Rect};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use thiserror::Error;
@@ -77,7 +77,7 @@ pub struct Node {
     #[serde(flatten)]
     #[serde(with = "point")]
     pub point: Point,
-    pub tags: HashMap<String, String>,
+    pub tags: Tags,
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,7 +88,7 @@ pub struct Way {
     pub nodes: Vec<i64>,
     #[serde(with = "vec_coord")]
     pub geometry: Vec<Coord>,
-    pub tags: HashMap<String, String>,
+    pub tags: Tags,
 }
 
 impl Way {
@@ -162,8 +162,71 @@ impl Bounds {
 #[derive(Debug, Deserialize)]
 pub struct Relation {
     pub id: i64,
+    #[serde(with = "opt_rect")]
+    pub bounds: Option<Rect>,
     pub members: Vec<Element>,
-    pub tags: HashMap<String, String>,
+    pub tags: Tags,
+}
+
+impl Relation {
+    pub fn polygon(&self) -> Option<MultiPolygon> {
+        let mut outers: Vec<LineString> = vec![];
+
+        for member in &self.members {
+            if let Element::Way(way) = member {
+                if let Some(multiline) = way.multiline() {
+                    if let Some(cont) = outers
+                        .iter_mut()
+                        .find(|o| o.coords().last() == multiline.coords().next())
+                    {
+                        let coords = cont
+                            .coords()
+                            .chain(multiline.coords().skip(1))
+                            .copied()
+                            .collect();
+
+                        *cont = LineString::new(coords);
+                    } else {
+                        outers.push(multiline)
+                    }
+                }
+            }
+        }
+
+        let outers: Vec<Polygon> = outers
+            .into_iter()
+            .filter(|ls| ls.is_closed())
+            .map(|ls| Polygon::new(ls, vec![]))
+            .collect();
+
+        todo!()
+    }
+}
+
+// #[derive(Debug, Deserialize)]
+// pub enum Member {
+//     #[serde(rename = "node")]
+//     Node(NodeMember),
+//     #[serde(rename = "way")]
+//     Way(WayMember),
+//     #[serde(rename = "relation")]
+//     Relation(RelationMember),
+// }
+
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+pub struct Tags(pub HashMap<String, String>);
+
+impl Tags {
+    pub fn building_height(&self) -> Option<f32> {
+        if let Some(height) = self.0.get("height") {
+            height.split_whitespace().next().unwrap().parse().ok()
+        } else if let Some(levels) = self.0.get("building:levels") {
+            levels.parse::<f32>().ok().map(|l| l * 3.)
+        } else {
+            None
+        }
+    }
 }
 
 mod point {
@@ -228,5 +291,29 @@ mod rect {
         let Bounds { minlat, minlon, maxlat, maxlon } = Bounds::deserialize(deserializer)?;
 
         Ok(Rect::new((minlon, minlat), (maxlon, maxlat)))
+    }
+}
+
+mod opt_rect {
+    use geo::Rect;
+    use serde::{Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Rect>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Bounds {
+            minlat: f64,
+            minlon: f64,
+            maxlat: f64,
+            maxlon: f64,
+        }
+
+        Ok(Option::<Bounds>::deserialize(deserializer)?.map(
+            |Bounds { minlat, minlon, maxlat, maxlon }| {
+                Rect::new((minlon, minlat), (maxlon, maxlat))
+            },
+        ))
     }
 }

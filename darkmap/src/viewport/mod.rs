@@ -42,16 +42,36 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         PanOrbitCamera {
+            pan_smoothness: 0.2,
             button_pan: MouseButton::Left,
             button_orbit: MouseButton::Right,
+            focus_y_upper_limit: Some(0.),
+            focus_y_lower_limit: Some(0.),
+            zoom_upper_limit: Some(600.),
+            zoom_lower_limit: Some(10.),
             ..default()
         },
         AtmosphereCamera::default(),
+        // FogSettings {
+        //     color: Color::rgb(0.53, 0.81, 0.92),
+        //     directional_light_color: Color::rgba(1.0, 0.95, 0.75, 1.),
+        //     directional_light_exponent: 200.0,
+        //     falloff: FogFalloff::from_visibility_colors(
+        //         20_000.,
+        //         Color::rgb(0.35, 0.5, 0.66),
+        //         Color::rgb(0.8, 0.844, 1.0),
+        //     ),
+        // },
     ));
 
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_rotation(Quat::from_rotation_x(-PI / 4.)),
-        ..Default::default()
+        ..default()
+    });
+
+    commands.insert_resource(AmbientLight {
+        color: Color::rgb(0.5, 0.5, 0.5),
+        brightness: 0.5,
     });
 
     commands.spawn(LoadRequest::new(Point::new(139.77137176176117, 35.69967697464613), 1000.));

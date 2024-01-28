@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use anyhow::Context;
 use bevy::prelude::*;
-use overpass::Element;
+use overpass::{Element, Tags};
 use serde_json::json;
 
 use crate::{
@@ -16,14 +14,13 @@ pub struct PoiPlugin;
 impl Plugin for PoiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LoadingPlugin::<PointOfInterest>::new())
-            .register_type::<PointOfInterest>()
             .add_systems(Update, decorate_poi);
     }
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component)]
 pub struct PointOfInterest {
-    pub tags: HashMap<String, String>,
+    pub tags: Tags,
 }
 
 impl LoadType for PointOfInterest {
@@ -60,7 +57,7 @@ fn decorate_poi(
 ) {
     for (entity, _poi) in &mut query.iter() {
         commands.entity(entity).remove::<DecorateRequest>().insert((
-            meshes.add(shape::UVSphere { radius: 1., sectors: 8, stacks: 4 }.into()),
+            // meshes.add(shape::UVSphere { radius: 1., sectors: 8, stacks: 4 }.into()),
             materials.add(StandardMaterial {
                 base_color: Color::rgb(1., 0., 0.),
                 ..Default::default()
