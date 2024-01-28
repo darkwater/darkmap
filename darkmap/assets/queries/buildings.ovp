@@ -1,0 +1,8 @@
+[out:json];
+(
+  way[building]
+  ({{bbox}});
+  way[~addr~".*"]
+  ({{bbox}});
+);
+out geom;

@@ -1,0 +1,7 @@
+[out:json];
+(
+  node
+  [name]
+  ({{ bbox }});
+);
+out geom;

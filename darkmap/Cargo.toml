@@ -6,11 +6,20 @@ authors = ["Sam Lakerveld <dark@dark.red>"]
 default-run = "darkmap"
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["dynamic_linking"] }
-bevy_atmosphere = "0.8.1"
-bevy_egui = "0.24.0"
-bevy-inspector-egui = "0.22.1"
-bevy_panorbit_camera = "0.10.0"
-bevy_mod_picking = { version = "0.17.0", default-features = false, features = [
+overpass = { workspace = true }
+
+bevy                 = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy_atmosphere      = "0.8.1"
+bevy_egui            = "0.24.0"
+bevy-inspector-egui  = "0.22.1"
+bevy_panorbit_camera = { version = "0.10.0", features = ["bevy_egui"] }
+bevy_mod_picking     = { version = "0.17.0", default-features = false, features = [
     "bevy_text", "bevy_ui", "highlight", "selection", "backend_raycast", "backend_sprite", "backend_egui"
 ] }
+
+anyhow     = "1.0.79"
+# earcutr    = "0.4.3"
+futures    = "0.3.30"
+geo        = "0.27.0"
+handlebars = "5.1.1"
+serde_json = "1.0.112"
