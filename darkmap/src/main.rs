@@ -13,11 +13,16 @@ mod roads;
 mod viewport;
 
 use bevy::{
+    diagnostic::{
+        EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin,
+        SystemInformationDiagnosticsPlugin,
+    },
     prelude::*,
     window::{PresentMode, WindowResolution},
 };
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
 use self::{
@@ -38,6 +43,13 @@ fn main() {
             DefaultPickingPlugins,
             EguiPlugin,
             WorldInspectorPlugin::new(),
+            OutlinePlugin,
+        ))
+        .add_plugins((
+            FrameTimeDiagnosticsPlugin,
+            EntityCountDiagnosticsPlugin,
+            LogDiagnosticsPlugin::default(),
+            SystemInformationDiagnosticsPlugin,
         ))
         .add_plugins((BuildingsPlugin, PoiPlugin, RoadsPlugin, ViewportPlugin))
         .add_systems(Update, bevy::window::close_on_esc)

@@ -193,7 +193,7 @@ impl Relation {
             }
         }
 
-        let outers: Vec<Polygon> = outers
+        let _outers: Vec<Polygon> = outers
             .into_iter()
             .filter(|ls| ls.is_closed())
             .map(|ls| Polygon::new(ls, vec![]))
@@ -237,18 +237,19 @@ impl Tags {
         {
             width
         } else if let Some(role) = self.0.get("highway") {
-            let lanes = self
-                .0
-                .get("lanes")
-                .and_then(|l| l.parse::<f32>().ok())
-                .unwrap_or(1.);
+            let lanes = 1.;
+            // let lanes = self
+            //     .0
+            //     .get("lanes")
+            //     .and_then(|l| l.parse::<f32>().ok())
+            //     .unwrap_or(1.);
 
             // lane width
             let lane_width = match role.as_str() {
-                "motorway" => 3.75,
-                "trunk" => 3.75,
-                "primary" => 3.5,
-                "secondary" => 3.25,
+                "motorway" => 6.,
+                "trunk" => 5.,
+                "primary" => 4.,
+                "secondary" => 3.5,
                 "tertiary" => 3.,
                 "residential" => 2.75,
                 "service" => 2.5,

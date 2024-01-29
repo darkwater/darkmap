@@ -1,13 +1,12 @@
-use std::f32::consts::FRAC_PI_2;
+use std::{f32::consts::FRAC_PI_2, time::Instant};
 
 use anyhow::Context;
 use bevy::{
+    pbr::StandardMaterial,
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
-use geo::{
-    Centroid, Coord, CoordsIter, HaversineBearing, HaversineDistance, LineString, MapCoords,
-};
+use geo::{Centroid, CoordsIter, HaversineBearing, HaversineDistance, LineString};
 use itertools::Itertools;
 use overpass::{Element, Tags};
 use serde_json::json;
@@ -74,7 +73,12 @@ fn decorate_road(
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
+    let start = Instant::now();
     for (entity, road, pos) in &mut query.iter() {
+        if start.elapsed().as_millis() > 2 {
+            break;
+        }
+
         commands.entity(entity).remove::<DecorateRequest>();
 
         let origin = pos.0;
@@ -85,7 +89,7 @@ fn decorate_road(
             .get("layer")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
-            * 0.5;
+            * 0.2;
 
         let level = road
             .tags
@@ -93,7 +97,7 @@ fn decorate_road(
             .get("level")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
-            * 3.;
+            * 1.;
 
         let bias = match road.tags.0.get("highway").map(|s| s.as_str()) {
             Some("motorway") => 0.5,
@@ -110,9 +114,9 @@ fn decorate_road(
         } * 0.1;
 
         let height = if road.tags.0.get("bridge").is_some() {
-            5.
+            2.
         } else if road.tags.0.get("tunnel").is_some() {
-            -20.
+            -5.
         } else {
             0.
         };
