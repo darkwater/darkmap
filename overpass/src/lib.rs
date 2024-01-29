@@ -227,6 +227,42 @@ impl Tags {
             None
         }
     }
+
+    pub fn road_width(&self) -> f32 {
+        if let Some(width) = self
+            .0
+            .get("width")
+            .and_then(|w| w.split_whitespace().next())
+            .and_then(|w| w.parse().ok())
+        {
+            width
+        } else if let Some(role) = self.0.get("highway") {
+            let lanes = self
+                .0
+                .get("lanes")
+                .and_then(|l| l.parse::<f32>().ok())
+                .unwrap_or(1.);
+
+            // lane width
+            let lane_width = match role.as_str() {
+                "motorway" => 3.75,
+                "trunk" => 3.75,
+                "primary" => 3.5,
+                "secondary" => 3.25,
+                "tertiary" => 3.,
+                "residential" => 2.75,
+                "service" => 2.5,
+                "unclassified" => 2.5,
+                "cycleway" => 2.5,
+                "footway" => 1.5,
+                _ => 2.5,
+            };
+
+            lanes * lane_width
+        } else {
+            2.5
+        }
+    }
 }
 
 mod point {

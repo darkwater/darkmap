@@ -1,8 +1,8 @@
 pub mod view_distance;
 
-use std::{f32::consts::PI, time::Duration};
+use std::f32::consts::PI;
 
-use bevy::{prelude::*, time::common_conditions::on_real_timer};
+use bevy::prelude::*;
 use bevy_atmosphere::plugin::{AtmosphereCamera, AtmospherePlugin};
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use geo::{HaversineBearing, HaversineDistance, Point};
@@ -17,14 +17,7 @@ impl Plugin for ViewportPlugin {
         app.add_plugins((AtmospherePlugin, PanOrbitCameraPlugin))
             .insert_resource(OriginCoordinate(Point::new(139.77137176176117, 35.69967697464613)))
             .add_systems(Startup, setup)
-            .add_systems(
-                Update,
-                (
-                    give_position,
-                    view_distance::update_visibility
-                        .run_if(on_real_timer(Duration::from_millis(100))),
-                ),
-            );
+            .add_systems(Update, (give_position, view_distance::update_visibility));
     }
 }
 
@@ -39,6 +32,11 @@ fn setup(mut commands: Commands) {
         Camera3dBundle {
             transform,
             projection: Projection::Perspective(PerspectiveProjection { far: 5000., ..default() }),
+            // projection: Projection::Orthographic(OrthographicProjection {
+            //     far: 5000.,
+            //     scale: 0.0001,
+            //     ..default()
+            // }),
             ..default()
         },
         PanOrbitCamera {
@@ -47,8 +45,8 @@ fn setup(mut commands: Commands) {
             button_orbit: MouseButton::Right,
             focus_y_upper_limit: Some(0.),
             focus_y_lower_limit: Some(0.),
-            zoom_upper_limit: Some(600.),
-            zoom_lower_limit: Some(10.),
+            // zoom_upper_limit: Some(1000.),
+            // zoom_lower_limit: Some(10.),
             ..default()
         },
         AtmosphereCamera::default(),

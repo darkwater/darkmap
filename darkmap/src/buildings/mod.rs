@@ -43,7 +43,9 @@ impl LoadType for Building {
             .render_template(template, &json!({ "bbox": req.bbox() }))
             .context("Failed to render query")?;
 
-        let res = overpass::load(&query).await.context("Failed to load POI")?;
+        let res = overpass::load(&query)
+            .await
+            .context("Failed to load buildings")?;
 
         Ok(res
             .elements
@@ -170,13 +172,17 @@ fn decorate_building(
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
         mesh.set_indices(Some(Indices::U32(indices)));
 
-        commands.entity(entity).insert((
+        let mut cmds = commands.entity(entity);
+        cmds.insert((
             meshes.add(mesh),
             materials.add(StandardMaterial {
                 base_color: Color::rgb(0.2, 0.22, 0.25),
                 ..Default::default()
             }),
-            ViewDistance(400.),
         ));
+
+        if height <= 10. {
+            cmds.insert(ViewDistance(1000.));
+        }
     }
 }

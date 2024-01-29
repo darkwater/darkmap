@@ -1,0 +1,8 @@
+[out:json];
+(
+  way[highway]
+  ({{bbox}});
+  way[railway]
+  ({{bbox}});
+);
+out geom;

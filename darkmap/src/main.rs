@@ -9,6 +9,7 @@ mod buildings;
 mod common;
 mod loading;
 mod poi;
+mod roads;
 mod viewport;
 
 use bevy::{
@@ -19,7 +20,9 @@ use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
-use self::{buildings::BuildingsPlugin, poi::PoiPlugin, viewport::ViewportPlugin};
+use self::{
+    buildings::BuildingsPlugin, poi::PoiPlugin, roads::RoadsPlugin, viewport::ViewportPlugin,
+};
 
 fn main() {
     App::new()
@@ -36,7 +39,7 @@ fn main() {
             EguiPlugin,
             WorldInspectorPlugin::new(),
         ))
-        .add_plugins((BuildingsPlugin, PoiPlugin, ViewportPlugin))
+        .add_plugins((BuildingsPlugin, PoiPlugin, RoadsPlugin, ViewportPlugin))
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
 }
