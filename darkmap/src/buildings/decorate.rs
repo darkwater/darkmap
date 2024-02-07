@@ -162,17 +162,37 @@ pub fn decorate_building(
                 base_color: Color::rgb(0.2, 0.22, 0.25),
                 ..Default::default()
             }),
+            PickableBundle::default(),
             On::<Pointer<Over>>::listener_commands_mut(|_, cmds| {
-                cmds.insert(OutlineBundle {
-                    outline: OutlineVolume {
-                        visible: true,
-                        width: 2.,
-                        colour: Color::rgb(1., 0., 0.),
-                    },
-                    ..default()
+                cmds.add(|mut ent: EntityWorldMut| {
+                    let selected = ent.get::<PickSelection>().is_some_and(|ps| ps.is_selected);
+                    if !selected {
+                        ent.insert(OutlineBundle {
+                            outline: OutlineVolume {
+                                visible: true,
+                                width: 2.,
+                                colour: Color::rgb(1., 1., 1.),
+                            },
+                            ..default()
+                        });
+                    }
                 });
             }),
+            On::<Pointer<Select>>::listener_component_mut(|_, volume: &mut OutlineVolume| {
+                volume.colour = Color::rgb(0., 1., 0.);
+            }),
             On::<Pointer<Out>>::listener_commands_mut(|_, cmds| {
+                cmds.add(|mut ent: EntityWorldMut| {
+                    let only_hovering = ent
+                        .get::<OutlineVolume>()
+                        .is_some_and(|v| v.colour == Color::rgb(1., 1., 1.));
+
+                    if only_hovering {
+                        ent.remove::<OutlineBundle>();
+                    }
+                });
+            }),
+            On::<Pointer<Deselect>>::listener_commands_mut(|_, cmds| {
                 cmds.remove::<OutlineBundle>();
             }),
         ));

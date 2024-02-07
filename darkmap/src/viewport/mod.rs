@@ -55,7 +55,9 @@ fn setup(
             ..default()
         },
         PanOrbitCamera {
-            pan_smoothness: 0.2,
+            pan_smoothness: 0.4,
+            orbit_smoothness: 0.4,
+            modifier_orbit_touchpad: Some(KeyCode::SuperLeft),
             button_pan: MouseButton::Left,
             button_orbit: MouseButton::Right,
             focus_y_upper_limit: Some(0.),

@@ -79,17 +79,37 @@ fn decorate_poi(
                 ..Default::default()
             }),
             ViewDistance(1000.),
+            PickableBundle::default(),
             On::<Pointer<Over>>::listener_commands_mut(|_, cmds| {
-                cmds.insert(OutlineBundle {
-                    outline: OutlineVolume {
-                        visible: true,
-                        width: 2.,
-                        colour: Color::rgb(1., 1., 1.),
-                    },
-                    ..default()
+                cmds.add(|mut ent: EntityWorldMut| {
+                    let selected = ent.get::<PickSelection>().is_some_and(|ps| ps.is_selected);
+                    if !selected {
+                        ent.insert(OutlineBundle {
+                            outline: OutlineVolume {
+                                visible: true,
+                                width: 2.,
+                                colour: Color::rgb(1., 1., 1.),
+                            },
+                            ..default()
+                        });
+                    }
                 });
             }),
+            On::<Pointer<Select>>::listener_component_mut(|_, volume: &mut OutlineVolume| {
+                volume.colour = Color::rgb(0., 1., 0.);
+            }),
             On::<Pointer<Out>>::listener_commands_mut(|_, cmds| {
+                cmds.add(|mut ent: EntityWorldMut| {
+                    let only_hovering = ent
+                        .get::<OutlineVolume>()
+                        .is_some_and(|v| v.colour == Color::rgb(1., 1., 1.));
+
+                    if only_hovering {
+                        ent.remove::<OutlineBundle>();
+                    }
+                });
+            }),
+            On::<Pointer<Deselect>>::listener_commands_mut(|_, cmds| {
                 cmds.remove::<OutlineBundle>();
             }),
         ));
@@ -100,19 +120,19 @@ fn move_up(
     mut pois: Query<(&WorldPosition, &mut Transform), With<PointOfInterest>>,
     buildings: Query<
         (&WorldPosition, &Building),
-        (With<DecorateRequest>, Without<PointOfInterest>),
+        (Added<Building>, With<DecorateRequest>, Without<PointOfInterest>),
     >,
 ) {
-    // for (poi_pos, mut transform) in &mut pois {
-    //     for (building_pos, building) in &buildings {
-    //         if building_pos.0.haversine_distance(&poi_pos.0) > 100. {
-    //             continue;
-    //         }
+    for (poi_pos, mut transform) in &mut pois {
+        for (building_pos, building) in &buildings {
+            if building_pos.0.haversine_distance(&poi_pos.0) > 100. {
+                continue;
+            }
 
-    //         if building.geometry.contains(&poi_pos.0) {
-    //             transform.translation.y = building.tags.building_height().unwrap_or(10.);
-    //             break;
-    //         }
-    //     }
-    // }
+            if building.geometry.contains(&poi_pos.0) {
+                transform.translation.y = building.tags.building_height().unwrap_or(10.);
+                break;
+            }
+        }
+    }
 }

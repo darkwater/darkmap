@@ -4,6 +4,7 @@ use bevy::{
     diagnostic::{DiagnosticId, Diagnostics},
     prelude::*,
 };
+use bevy_panorbit_camera::PanOrbitCamera;
 
 #[derive(Component)]
 pub struct ViewDistance(pub f32);
@@ -15,7 +16,7 @@ pub const VIEW_DISTANCE_DIAGNOSTIC_SUFFIX: &str = "us";
 
 pub(super) fn update_visibility(
     mut query: Query<(&mut Visibility, &GlobalTransform, &ViewDistance)>,
-    camera: Query<&Transform, With<Camera>>,
+    camera: Query<(&Transform, &PanOrbitCamera), With<Camera>>,
     mut diagnostics: Diagnostics,
 ) {
     let start = Instant::now();
@@ -23,7 +24,8 @@ pub(super) fn update_visibility(
     let camera = camera.get_single().unwrap();
 
     for (mut visible, transform, ViewDistance(view_dist)) in query.iter_mut() {
-        let distance = transform.translation().distance_squared(camera.translation);
+        let center = (camera.0.translation + camera.1.focus) / 2.;
+        let distance = transform.translation().distance_squared(center);
         let desired = if distance < view_dist.powi(2) {
             Visibility::Visible
         } else {
