@@ -21,10 +21,12 @@ pub(super) fn update_visibility(
 ) {
     let start = Instant::now();
 
-    let camera = camera.get_single().unwrap();
+    let Ok(camera) = camera.get_single() else {
+        return;
+    };
 
     for (mut visible, transform, ViewDistance(view_dist)) in query.iter_mut() {
-        let center = (camera.0.translation + camera.1.focus) / 2.;
+        let center = camera.1.focus;
         let distance = transform.translation().distance_squared(center);
         let desired = if distance < view_dist.powi(2) {
             Visibility::Visible

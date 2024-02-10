@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use anyhow::Context;
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineMeshExt, OutlineVolume};

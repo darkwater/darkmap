@@ -247,14 +247,15 @@ impl Tags {
     }
 
     pub fn road_width(&self) -> f32 {
-        if let Some(width) = self
-            .0
-            .get("width")
-            .and_then(|w| w.split_whitespace().next())
-            .and_then(|w| w.parse().ok())
-        {
-            width
-        } else if let Some(role) = self.0.get("highway") {
+        // if let Some(width) = self
+        //     .0
+        //     .get("width")
+        //     .and_then(|w| w.split_whitespace().next())
+        //     .and_then(|w| w.parse().ok())
+        // {
+        //     width
+        // } else
+        if let Some(role) = self.0.get("highway") {
             let lanes = 1.;
             // let lanes = self
             //     .0
@@ -274,6 +275,7 @@ impl Tags {
                 "unclassified" => 2.5,
                 "cycleway" => 2.5,
                 "footway" => 1.5,
+                "path" => 1.5,
                 _ => 2.5,
             };
 

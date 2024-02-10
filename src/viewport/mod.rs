@@ -52,12 +52,13 @@ fn setup(
             projection: Projection::Perspective(PerspectiveProjection { far: 5000., ..default() }),
             // projection: Projection::Orthographic(OrthographicProjection {
             //     far: 5000.,
-            //     scale: 0.0001,
+            //     near: -5000.,
             //     ..default()
             // }),
             ..default()
         },
         PanOrbitCamera {
+            pan_sensitivity: 0.8555,
             pan_smoothness: 0.4,
             orbit_smoothness: 0.4,
             modifier_orbit_touchpad: Some(KeyCode::SuperLeft),
@@ -67,6 +68,12 @@ fn setup(
             focus_y_lower_limit: Some(0.),
             zoom_upper_limit: Some(900.),
             zoom_lower_limit: Some(10.),
+            // zoom_upper_limit: Some(1.),
+            // zoom_lower_limit: Some(0.05),
+            // alpha_upper_limit: Some(0.),
+            // alpha_lower_limit: Some(0.),
+            // beta_upper_limit: Some(FRAC_PI_2 - 0.01),
+            // beta_lower_limit: Some(FRAC_PI_2 - 0.01),
             ..default()
         },
         AtmosphereCamera::default(),

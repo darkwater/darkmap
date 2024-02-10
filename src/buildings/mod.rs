@@ -20,6 +20,7 @@ pub struct BuildingsPlugin;
 impl Plugin for BuildingsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LoadingPlugin::<Building>::new())
+            .add_systems(Startup, material::init_materials)
             .add_systems(Update, (decorate::decorate_building, update_outline));
     }
 }

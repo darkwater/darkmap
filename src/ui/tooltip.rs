@@ -8,9 +8,13 @@ use bevy_egui::{
     EguiContexts,
 };
 use bevy_mod_picking::focus::HoverMap;
+use itertools::Itertools;
+
+use crate::overpass::Tags;
 
 pub fn show_tooltip(
     names: Query<&Name>,
+    tags: Query<&Tags>,
     children: Query<&Children>,
     hovers: Res<HoverMap>,
     mut egui_contexts: EguiContexts,
@@ -28,6 +32,14 @@ pub fn show_tooltip(
             show_tooltip_at_pointer(ctx, tooltip(), |ui| {
                 if let Ok(name) = names.get(*entity) {
                     ui.label(name.to_string());
+                }
+
+                if let Ok(tags) = tags.get(*entity) {
+                    let mut tags = tags.0.iter().collect_vec();
+                    tags.sort_by_key(|(k, _)| *k);
+                    for (k, v) in tags {
+                        ui.label(format!("{}: {}", k, v));
+                    }
                 }
 
                 if let Ok(children) = children.get(*entity) {

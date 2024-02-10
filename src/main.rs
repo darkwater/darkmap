@@ -23,11 +23,14 @@ use bevy::{
 use bevy_egui::EguiPlugin;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
+use catppuccin::{Flavour, FlavourColours};
 
 use self::{
     buildings::BuildingsPlugin, debug::DebugPlugin, poi::PoiPlugin, roads::RoadsPlugin,
     ui::UiPlugin, viewport::ViewportPlugin,
 };
+
+const COLORS: FlavourColours = Flavour::Frappe.colours();
 
 fn main() {
     App::new()

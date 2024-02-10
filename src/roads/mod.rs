@@ -1,4 +1,4 @@
-use std::{f32::consts::FRAC_PI_2, time::Instant};
+use std::f32::consts::FRAC_PI_2;
 
 use anyhow::Context;
 use bevy::{
@@ -28,7 +28,6 @@ impl Plugin for RoadsPlugin {
 
 #[derive(Component)]
 pub struct Road {
-    pub tags: Tags,
     pub geometry: LineString,
 }
 
@@ -52,10 +51,8 @@ impl LoadType for Road {
             .flat_map(|elem| {
                 if let Element::Way(way) = elem {
                     Some((
-                        Self {
-                            tags: way.tags,
-                            geometry: way.geometry.into(),
-                        },
+                        Self { geometry: way.geometry.into() },
+                        way.tags,
                         WorldPosition(way.bounds.unwrap().centroid()),
                         DecorateRequest,
                     ))
@@ -68,33 +65,31 @@ impl LoadType for Road {
 }
 
 fn decorate_road(
-    query: Query<(Entity, &Road, &WorldPosition), With<DecorateRequest>>,
+    query: Query<(Entity, &Road, &Tags, &WorldPosition), With<DecorateRequest>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
-    for (entity, road, pos) in query.iter().take(100) {
+    for (entity, road, tags, pos) in query.iter().take(100) {
         commands.entity(entity).remove::<DecorateRequest>();
 
         let origin = pos.0;
 
-        let layer = road
-            .tags
+        let layer = tags
             .0
             .get("layer")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
             * 0.1;
 
-        let level = road
-            .tags
+        let level = tags
             .0
             .get("level")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
             * 0.;
 
-        let bias = match road.tags.0.get("highway").map(|s| s.as_str()) {
+        let bias = match tags.0.get("highway").map(|s| s.as_str()) {
             Some("motorway") => 0.5,
             Some("trunk") => 0.4,
             Some("primary") => 0.3,
@@ -108,9 +103,9 @@ fn decorate_road(
             _ => 0.,
         } * 0.01;
 
-        let height = if road.tags.0.get("bridge").is_some() {
+        let height = if tags.0.get("bridge").is_some() {
             0.
-        } else if road.tags.0.get("tunnel").is_some() {
+        } else if tags.0.get("tunnel").is_some() {
             -0.
         } else {
             0.
@@ -133,9 +128,9 @@ fn decorate_road(
             })
             .collect::<Vec<_>>();
 
-        let half_width: f32 = road.tags.road_width() / 2.;
+        let half_width: f32 = tags.road_width() / 2.;
 
-        let mesh = if road.tags.0.get("area").is_some() {
+        let mesh = if tags.0.get("area").is_some() {
             let vertices_2d = geometry.iter().flat_map(|v| [v.x, v.z]).collect::<Vec<_>>();
 
             let indices = earcutr::earcut(&vertices_2d, &[], 2)
@@ -203,7 +198,7 @@ fn decorate_road(
             mesh
         };
 
-        let base_color = match road.tags.0.get("highway").map(|s| s.as_str()) {
+        let base_color = match tags.0.get("highway").map(|s| s.as_str()) {
             Some("motorway") => Color::rgb(0.9, 0.5, 0.1),
             Some("trunk") => Color::rgb(0.9, 0.4, 0.1),
             Some("primary") => Color::rgb(0.9, 0.3, 0.1),
@@ -223,7 +218,7 @@ fn decorate_road(
             materials.add(StandardMaterial { base_color, ..Default::default() }),
         ));
 
-        if let Some(name) = road.tags.name() {
+        if let Some(name) = tags.name() {
             cmds.insert(Name::new(name.to_string()));
         }
     }

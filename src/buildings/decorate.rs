@@ -9,7 +9,7 @@ use bevy_mod_picking::prelude::*;
 use geo::{Coord, CoordsIter, HaversineBearing, HaversineDistance, LineString, MapCoords, Winding};
 use itertools::Itertools;
 
-use super::Building;
+use super::{material::Materials, Building};
 use crate::{
     common::{DecorateRequest, WorldPosition},
     overpass::Tags,
@@ -18,7 +18,7 @@ use crate::{
 
 pub fn decorate_building(
     query: Query<(Entity, &Building, &Tags, &WorldPosition), With<DecorateRequest>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    materials: Res<Materials>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
@@ -80,7 +80,7 @@ pub fn decorate_building(
         let mut normals = exterior.iter().map(|_| [0., 1., 0.]).collect::<Vec<_>>();
         let mut colors = exterior
             .iter()
-            .map(|_| [1., 1., 1., 1.])
+            .map(|_| [0.5, 0.5, 0.5, 0.5])
             .collect::<Vec<_>>();
 
         let mut outline_normals = exterior
@@ -129,8 +129,10 @@ pub fn decorate_building(
                 })
                 .collect_vec(),
         );
-        let wall_a = 0.5;
-        colors.extend((0..exterior.len() * 4).map(|_| [wall_a, wall_a, wall_a, 1.]));
+        let wall_a = 0.3;
+        colors.extend((0..exterior.len() * 2).flat_map(|_| {
+            [[wall_a / 5., wall_a / 5., wall_a / 5., 1.], [wall_a, wall_a, wall_a, 1.]]
+        }));
         indices.extend(
             (0..exterior.len())
                 .flat_map(|i| {
@@ -151,22 +153,41 @@ pub fn decorate_building(
         mesh.insert_attribute(ATTRIBUTE_OUTLINE_NORMAL, outline_normals);
         mesh.set_indices(Some(Indices::U32(indices)));
 
+        let material = match tags.get("building").map(|s| s.as_str()) {
+            Some(
+                "boathouse" | "bungalow" | "cabin" | "static_caravan" | "terrace" | "apartments"
+                | "house" | "residential" | "detached" | "semidetached_house",
+            ) => materials.residential.clone(),
+            Some("church" | "chapel" | "mosque" | "temple" | "religious") => {
+                materials.religious.clone()
+            }
+            Some("farm_auxiliary" | "barn" | "greenhouse") => materials.agricultural.clone(),
+            Some("school" | "university" | "kindergarten") => materials.school.clone(),
+            Some("manufacture" | "industrial") => materials.industrial.clone(),
+            Some("civic" | "public" | "stadium") => materials.civic.clone(),
+            Some("commercial") => materials.commercial.clone(),
+            Some("retail") => materials.retail.clone(),
+            Some("outbuilding") => materials.outbuilding.clone(),
+            Some("construction") => materials.construction.clone(),
+            Some("service" | "fire_station") => materials.service.clone(),
+            Some("farm") => materials.agricultural.clone(),
+            Some("warehouse") => materials.warehouse.clone(),
+            Some("office") => materials.office.clone(),
+            Some("hospital") => materials.hospital.clone(),
+            Some("hotel") => materials.hotel.clone(),
+            Some("train_station" | "transportation") => materials.transportation.clone(),
+            _ => materials.default.clone(),
+        };
+
         let mut cmds = commands.entity(entity);
-        cmds.insert((
-            meshes.add(mesh),
-            materials.add(StandardMaterial {
-                base_color: Color::rgb(0.2, 0.22, 0.25),
-                ..Default::default()
-            }),
-            PickableBundle::default(),
-        ));
+        cmds.insert((meshes.add(mesh), material, PickableBundle::default()));
 
         if let Some(name) = tags.name() {
             cmds.insert(Name::new(name.to_string()));
         }
 
         if height < 12. {
-            cmds.insert(ViewDistance(1000.));
+            cmds.insert(ViewDistance(800.));
         }
     }
 }
