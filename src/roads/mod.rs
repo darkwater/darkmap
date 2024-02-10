@@ -8,12 +8,12 @@ use bevy::{
 };
 use geo::{Centroid, CoordsIter, HaversineBearing, HaversineDistance, LineString};
 use itertools::Itertools;
-use overpass::{Element, Tags};
 use serde_json::json;
 
 use crate::{
     common::{DecorateRequest, WorldPosition},
     loading::{LoadRequest, LoadType, LoadingPlugin},
+    overpass::{Element, Tags},
 };
 
 #[derive(Default)]
@@ -42,7 +42,7 @@ impl LoadType for Road {
             .render_template(template, &json!({ "bbox": req.bbox() }))
             .context("Failed to render query")?;
 
-        let res = overpass::load(&query)
+        let res = crate::overpass::load(&query)
             .await
             .context("Failed to load roads")?;
 
@@ -73,12 +73,7 @@ fn decorate_road(
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
-    let start = Instant::now();
-    for (entity, road, pos) in &mut query.iter() {
-        if start.elapsed().as_millis() > 2 {
-            break;
-        }
-
+    for (entity, road, pos) in query.iter().take(100) {
         commands.entity(entity).remove::<DecorateRequest>();
 
         let origin = pos.0;
@@ -222,9 +217,14 @@ fn decorate_road(
             _ => Color::rgb(0.5, 0.5, 0.5),
         };
 
-        commands.entity(entity).insert((
+        let mut cmds = commands.entity(entity);
+        cmds.insert((
             meshes.add(mesh),
             materials.add(StandardMaterial { base_color, ..Default::default() }),
         ));
+
+        if let Some(name) = road.tags.name() {
+            cmds.insert(Name::new(name.to_string()));
+        }
     }
 }

@@ -1,10 +1,10 @@
-use std::{f32::consts::FRAC_PI_4, time::Instant};
+use std::f32::consts::FRAC_PI_4;
 
 use bevy::{
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
-use bevy_mod_outline::{OutlineBundle, OutlineVolume, ATTRIBUTE_OUTLINE_NORMAL};
+use bevy_mod_outline::ATTRIBUTE_OUTLINE_NORMAL;
 use bevy_mod_picking::prelude::*;
 use geo::{Coord, CoordsIter, HaversineBearing, HaversineDistance, LineString, MapCoords, Winding};
 use itertools::Itertools;
@@ -12,21 +12,17 @@ use itertools::Itertools;
 use super::Building;
 use crate::{
     common::{DecorateRequest, WorldPosition},
+    overpass::Tags,
     viewport::view_distance::ViewDistance,
 };
 
 pub fn decorate_building(
-    query: Query<(Entity, &Building, &WorldPosition), With<DecorateRequest>>,
+    query: Query<(Entity, &Building, &Tags, &WorldPosition), With<DecorateRequest>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
-    let start = Instant::now();
-    for (entity, building, pos) in &mut query.iter() {
-        if start.elapsed().as_millis() > 2 {
-            break;
-        }
-
+    for (entity, building, tags, pos) in query.iter().take(100) {
         commands.entity(entity).remove::<DecorateRequest>();
 
         let origin = pos.0;
@@ -44,7 +40,7 @@ pub fn decorate_building(
             }
         });
 
-        let height = building.tags.building_height().unwrap_or(10.);
+        let height = tags.building_height().unwrap_or(10.);
 
         let exterior = geometry.exterior_coords_iter().collect::<LineString<f32>>();
         let mut exterior = exterior.points_cw().map(Coord::from).collect::<Vec<_>>();
@@ -163,51 +159,9 @@ pub fn decorate_building(
                 ..Default::default()
             }),
             PickableBundle::default(),
-            OutlineBundle {
-                outline: OutlineVolume {
-                    visible: false,
-                    width: 2.,
-                    colour: Color::rgb(1., 1., 1.),
-                },
-                ..default()
-            },
-            // On::<Pointer<Over>>::listener_commands_mut(|_, cmds| {
-            //     cmds.add(|mut ent: EntityWorldMut| {
-            //         let selected = ent.get::<PickSelection>().is_some_and(|ps| ps.is_selected);
-            //         if !selected {
-            //             ent.insert(OutlineBundle {
-            //                 outline: OutlineVolume {
-            //                     visible: true,
-            //                     width: 2.,
-            //                     colour: Color::rgb(1., 1., 1.),
-            //                 },
-            //                 ..default()
-            //             });
-            //         }
-            //     });
-            // }),
-            // On::<Pointer<Select>>::listener_component_mut(|_, volume: &mut OutlineVolume| {
-            //     println!("SELECTED");
-            //     volume.colour = Color::rgb(0., 1., 0.);
-            // }),
-            // On::<Pointer<Out>>::listener_commands_mut(|_, cmds| {
-            //     cmds.add(|mut ent: EntityWorldMut| {
-            //         let only_hovering = ent
-            //             .get::<OutlineVolume>()
-            //             .is_some_and(|v| v.colour == Color::rgb(1., 1., 1.));
-
-            //         if only_hovering {
-            //             ent.remove::<OutlineBundle>();
-            //         }
-            //     });
-            // }),
-            // On::<Pointer<Deselect>>::listener_commands_mut(|_, cmds| {
-            //     println!("DESELECTED");
-            //     cmds.remove::<OutlineBundle>();
-            // }),
         ));
 
-        if let Some(name) = building.tags.name() {
+        if let Some(name) = tags.name() {
             cmds.insert(Name::new(name.to_string()));
         }
 

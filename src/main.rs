@@ -9,6 +9,7 @@ mod buildings;
 mod common;
 mod debug;
 mod loading;
+mod overpass;
 mod poi;
 mod roads;
 mod ui;

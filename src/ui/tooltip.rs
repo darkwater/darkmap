@@ -25,19 +25,17 @@ pub fn show_tooltip(
 
     for hovers in hovers.values() {
         for entity in hovers.keys() {
-            if let Ok(name) = names.get(*entity) {
-                show_tooltip_at_pointer(ctx, tooltip(), |ui| {
+            show_tooltip_at_pointer(ctx, tooltip(), |ui| {
+                if let Ok(name) = names.get(*entity) {
                     ui.label(name.to_string());
-                });
-            }
-
-            if let Ok(children) = children.get(*entity) {
-                for name in children.iter().filter_map(|entity| names.get(*entity).ok()) {
-                    show_tooltip_at_pointer(ctx, tooltip(), |ui| {
-                        ui.label(name.to_string());
-                    });
                 }
-            }
+
+                if let Ok(children) = children.get(*entity) {
+                    for name in children.iter().filter_map(|entity| names.get(*entity).ok()) {
+                        ui.label(name.to_string());
+                    }
+                }
+            });
         }
     }
 }

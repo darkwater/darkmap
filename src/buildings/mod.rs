@@ -3,15 +3,15 @@ mod material;
 
 use anyhow::Context;
 use bevy::prelude::*;
-use bevy_mod_outline::OutlineVolume;
+use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use bevy_mod_picking::{focus::PickingInteraction, selection::PickSelection};
 use geo::{Centroid, MultiPolygon};
-use overpass::{Element, Tags};
 use serde_json::json;
 
 use crate::{
     common::{DecorateRequest, WorldPosition},
     loading::{LoadRequest, LoadType, LoadingPlugin},
+    overpass::Element,
 };
 
 #[derive(Default)]
@@ -26,29 +26,44 @@ impl Plugin for BuildingsPlugin {
 
 fn update_outline(
     mut query: Query<
-        (&mut OutlineVolume, &PickingInteraction, &PickSelection),
-        Or<(Changed<PickingInteraction>, Changed<PickSelection>)>,
+        (Entity, Option<&mut OutlineVolume>, &PickingInteraction, &PickSelection),
+        (With<Building>, Or<(Changed<PickingInteraction>, Changed<PickSelection>)>),
     >,
+    mut commands: Commands,
 ) {
-    for (mut outline, interaction, selection) in &mut query {
+    for (entity, outline, interaction, selection) in &mut query {
+        let mut color = None;
+
         if let PickingInteraction::Pressed = interaction {
-            outline.visible = true;
-            outline.colour = Color::rgb(1., 1., 0.);
+            color = Some(Color::rgb(1., 1., 0.));
         } else if selection.is_selected {
-            outline.visible = true;
-            outline.colour = Color::rgb(1., 1., 1.);
+            color = Some(Color::rgb(1., 1., 1.));
         } else if let PickingInteraction::Hovered = interaction {
-            outline.visible = true;
-            outline.colour = Color::rgb(1., 0., 0.);
-        } else {
-            outline.visible = false;
+            color = Some(Color::rgb(1., 0., 0.));
+        }
+
+        if let Some(color) = color {
+            if let Some(mut outline) = outline {
+                outline.visible = true;
+                outline.colour = color;
+            } else {
+                commands.entity(entity).insert(OutlineBundle {
+                    outline: OutlineVolume {
+                        visible: true,
+                        width: 2.,
+                        colour: color,
+                    },
+                    ..default()
+                });
+            }
+        } else if outline.is_some() {
+            commands.entity(entity).remove::<OutlineBundle>();
         }
     }
 }
 
 #[derive(Component)]
 pub struct Building {
-    pub tags: Tags,
     pub geometry: MultiPolygon,
 }
 
@@ -62,7 +77,7 @@ impl LoadType for Building {
             .render_template(template, &json!({ "bbox": req.bbox() }))
             .context("Failed to render query")?;
 
-        let res = overpass::load(&query)
+        let res = crate::overpass::load(&query)
             .await
             .context("Failed to load buildings")?;
 
@@ -72,10 +87,8 @@ impl LoadType for Building {
             .flat_map(|elem| match elem {
                 Element::Way(way) => way.polygon().map(|poly| {
                     (
-                        Self {
-                            tags: way.tags,
-                            geometry: poly.into(),
-                        },
+                        Self { geometry: poly.into() },
+                        way.tags,
                         WorldPosition(way.bounds.unwrap().centroid()),
                         DecorateRequest,
                     )

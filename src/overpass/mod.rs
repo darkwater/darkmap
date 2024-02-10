@@ -1,5 +1,8 @@
+#![allow(dead_code)]
+
 use std::{collections::HashMap, ops::Deref};
 
+use bevy::prelude::*;
 use format_serde_error::SerdeError;
 use geo::{Coord, LineString, MultiPolygon, Point, Polygon, Rect};
 use lazy_static::lazy_static;
@@ -220,7 +223,7 @@ impl Relation {
 //     Relation(RelationMember),
 // }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Component, Debug, Default, Deserialize)]
 #[serde(transparent)]
 pub struct Tags(pub HashMap<String, String>);
 
