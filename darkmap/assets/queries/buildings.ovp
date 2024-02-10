@@ -2,7 +2,7 @@
 (
   way[building]
   ({{bbox}});
-  way[~addr~".*"]
+  relation[building]
   ({{bbox}});
 );
 out geom;

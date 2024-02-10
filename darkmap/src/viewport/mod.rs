@@ -35,6 +35,9 @@ impl Plugin for ViewportPlugin {
 #[derive(Resource)]
 pub struct OriginCoordinate(pub Point);
 
+#[derive(Component)]
+pub struct MainCamera;
+
 fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -81,6 +84,7 @@ fn setup(
                 inscattering: Vec3::new(0.0001, 0.0001, 0.0001),
             },
         },
+        MainCamera,
     ));
 
     commands.spawn(DirectionalLightBundle {

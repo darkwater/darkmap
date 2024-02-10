@@ -91,6 +91,9 @@ fn finish_loading<T: LoadType>(
                 }
                 Err(e) => {
                     error!("Failed to load: {}", e);
+                    for cause in e.chain() {
+                        error!("Caused by: {}", cause);
+                    }
                 }
             }
         }

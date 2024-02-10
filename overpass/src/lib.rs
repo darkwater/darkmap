@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
+use format_serde_error::SerdeError;
 use geo::{Coord, LineString, MultiPolygon, Point, Polygon, Rect};
 use lazy_static::lazy_static;
 use serde::Deserialize;
@@ -17,7 +18,7 @@ pub enum Error {
         status: surf::http::StatusCode,
     },
     #[error("Failed to parse data")]
-    ParseError(#[from] serde_json::Error),
+    ParseError(#[from] SerdeError),
 }
 
 impl From<surf::Error> for Error {
@@ -39,7 +40,10 @@ pub async fn load(query: &str) -> Result<ApiResponse, Error> {
         .body(body)
         .await?;
 
-    Ok(res.body_json::<ApiResponse>().await?)
+    let body = res.body_string().await?;
+
+    format_serde_error::set_default_context_lines(20);
+    Ok(serde_json::from_str(&body).map_err(|e| SerdeError::new(body, e))?)
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,18 +86,21 @@ pub struct Node {
 
 #[derive(Debug, Deserialize)]
 pub struct Way {
+    #[serde(alias = "ref")]
     pub id: i64,
-    #[serde(with = "rect")]
-    pub bounds: Rect,
-    pub nodes: Vec<i64>,
+    #[serde(default, with = "opt_rect")]
+    pub bounds: Option<Rect>,
+    #[serde(default)]
+    pub nodes: Option<Vec<i64>>,
     #[serde(with = "vec_coord")]
     pub geometry: Vec<Coord>,
+    #[serde(default)]
     pub tags: Tags,
 }
 
 impl Way {
     pub fn is_closed(&self) -> bool {
-        self.nodes.first() == self.nodes.last()
+        self.geometry.first() == self.geometry.last()
     }
 
     pub fn polygon(&self) -> Option<Polygon> {
@@ -105,7 +112,7 @@ impl Way {
     }
 
     pub fn multiline(&self) -> Option<LineString> {
-        if self.nodes.len() > 1 {
+        if self.geometry.len() > 1 {
             Some(LineString::new(self.geometry.clone()))
         } else {
             None
@@ -162,7 +169,7 @@ impl Bounds {
 #[derive(Debug, Deserialize)]
 pub struct Relation {
     pub id: i64,
-    #[serde(with = "opt_rect")]
+    #[serde(default, with = "opt_rect")]
     pub bounds: Option<Rect>,
     pub members: Vec<Element>,
     pub tags: Tags,
@@ -213,9 +220,17 @@ impl Relation {
 //     Relation(RelationMember),
 // }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(transparent)]
 pub struct Tags(pub HashMap<String, String>);
+
+impl Deref for Tags {
+    type Target = HashMap<String, String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl Tags {
     pub fn building_height(&self) -> Option<f32> {
@@ -263,6 +278,13 @@ impl Tags {
         } else {
             2.5
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        self.0
+            .get("name:en")
+            .or_else(|| self.0.get("name"))
+            .map(|s| s.as_str())
     }
 }
 

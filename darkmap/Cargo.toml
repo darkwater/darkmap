@@ -13,9 +13,10 @@ bevy_atmosphere      = "0.8.1"
 bevy_egui            = "0.24.0"
 bevy-inspector-egui  = "0.22.1"
 bevy_panorbit_camera = { git = "https://github.com/darkwater/bevy_panorbit_camera", features = ["bevy_egui"] }
+bevy_mod_billboard   = { version = "0.5.1" }
 bevy_mod_outline     = { version = "0.6.0" }
-bevy_mod_picking     = { version = "0.17.0", default-features = false, features = [
-    "bevy_text", "bevy_ui", "selection", "backend_raycast", "backend_sprite", "backend_egui"
+bevy_mod_picking     = { path = "../../bevy_mod_picking", default-features = false, features = [
+    "selection", "backend_bevy_ui", "backend_egui", "backend_raycast", "bevy_text"
 ] }
 
 anyhow     = "1.0.79"

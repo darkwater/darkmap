@@ -56,7 +56,7 @@ impl LoadType for Road {
                             tags: way.tags,
                             geometry: way.geometry.into(),
                         },
-                        WorldPosition(way.bounds.centroid()),
+                        WorldPosition(way.bounds.unwrap().centroid()),
                         DecorateRequest,
                     ))
                 } else {
@@ -89,7 +89,7 @@ fn decorate_road(
             .get("layer")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
-            * 0.2;
+            * 0.1;
 
         let level = road
             .tags
@@ -97,7 +97,7 @@ fn decorate_road(
             .get("level")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
-            * 1.;
+            * 0.;
 
         let bias = match road.tags.0.get("highway").map(|s| s.as_str()) {
             Some("motorway") => 0.5,
@@ -111,12 +111,12 @@ fn decorate_road(
             Some("cycleway") => -0.3,
             Some("footway") => -0.4,
             _ => 0.,
-        } * 0.1;
+        } * 0.01;
 
         let height = if road.tags.0.get("bridge").is_some() {
-            2.
+            0.
         } else if road.tags.0.get("tunnel").is_some() {
-            -5.
+            -0.
         } else {
             0.
         };

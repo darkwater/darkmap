@@ -7,26 +7,25 @@
 
 mod buildings;
 mod common;
+mod debug;
 mod loading;
 mod poi;
 mod roads;
+mod ui;
 mod viewport;
 
 use bevy::{
-    diagnostic::{
-        EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin,
-        SystemInformationDiagnosticsPlugin,
-    },
+    diagnostic::{EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin},
     prelude::*,
     window::{PresentMode, WindowResolution},
 };
 use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 
 use self::{
-    buildings::BuildingsPlugin, poi::PoiPlugin, roads::RoadsPlugin, viewport::ViewportPlugin,
+    buildings::BuildingsPlugin, debug::DebugPlugin, poi::PoiPlugin, roads::RoadsPlugin,
+    ui::UiPlugin, viewport::ViewportPlugin,
 };
 
 fn main() {
@@ -42,15 +41,11 @@ fn main() {
             }),
             DefaultPickingPlugins,
             EguiPlugin,
-            WorldInspectorPlugin::new(),
             OutlinePlugin,
+            UiPlugin,
+            DebugPlugin,
         ))
-        .add_plugins((
-            FrameTimeDiagnosticsPlugin,
-            EntityCountDiagnosticsPlugin,
-            LogDiagnosticsPlugin::default(),
-            SystemInformationDiagnosticsPlugin,
-        ))
+        .add_plugins((FrameTimeDiagnosticsPlugin, EntityCountDiagnosticsPlugin))
         .add_plugins((BuildingsPlugin, PoiPlugin, RoadsPlugin, ViewportPlugin))
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
