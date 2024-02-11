@@ -19,6 +19,7 @@ bevy_mod_picking     = { path = "../bevy_mod_picking", default-features = false,
 
 anyhow             = "1.0.79"
 catppuccin         = "1.4.0"
+css-colors         = "1.0.1"
 earcutr            = "0.4.3"
 format_serde_error = "0.3.0"
 futures            = "0.3.30"

@@ -11,9 +11,11 @@ use itertools::Itertools;
 use serde_json::json;
 
 use crate::{
+    color,
     common::{DecorateRequest, WorldPosition},
     loading::{LoadRequest, LoadType, LoadingPlugin},
     overpass::{Element, Tags},
+    COLORS, SUBWAY_DEPTH,
 };
 
 #[derive(Default)]
@@ -80,7 +82,7 @@ fn decorate_road(
             .get("layer")
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(0) as f32
-            * 0.1;
+            * 0.001;
 
         let level = tags
             .0
@@ -90,18 +92,32 @@ fn decorate_road(
             * 0.;
 
         let bias = match tags.0.get("highway").map(|s| s.as_str()) {
-            Some("motorway") => 0.5,
-            Some("trunk") => 0.4,
-            Some("primary") => 0.3,
-            Some("secondary") => 0.2,
-            Some("tertiary") => 0.1,
-            Some("residential") => 0.,
-            Some("service") => -0.1,
-            Some("unclassified") => -0.2,
-            Some("cycleway") => -0.3,
-            Some("footway") => -0.4,
+            Some("motorway") => 0.4,
+            Some("trunk") => 0.3,
+            Some("primary") => 0.2,
+            Some("secondary") => 0.1,
+            Some("tertiary") => 0.0,
+            Some("residential") => -0.1,
+            Some("service") => -0.2,
+            Some("unclassified") => -0.3,
+            Some("cycleway") => 0.6,
+            Some("footway") => 1.7,
             _ => 0.,
         } * 0.01;
+
+        let crossing = if tags.0.get("crossing").is_some_and(|f| f == "zebra") {
+            -0.01
+        } else {
+            0.
+        };
+
+        let subway = if tags.0.get("railway").is_some_and(|r| r == "subway")
+            || tags.0.get("subway").is_some()
+        {
+            SUBWAY_DEPTH
+        } else {
+            0.
+        };
 
         let height = if tags.0.get("bridge").is_some() {
             0.
@@ -109,7 +125,11 @@ fn decorate_road(
             -0.
         } else {
             0.
-        };
+        } + subway
+            + crossing
+            + level
+            + layer
+            + bias;
 
         // translate coords into meters
         let geometry = road
@@ -124,7 +144,7 @@ fn decorate_road(
                 let x = (distance * ang.sin()) as f32;
                 let y = (distance * -ang.cos()) as f32;
 
-                Vec3::new(x, height + level + layer + bias, y)
+                Vec3::new(x, height, y)
             })
             .collect::<Vec<_>>();
 
@@ -198,18 +218,25 @@ fn decorate_road(
             mesh
         };
 
-        let base_color = match tags.0.get("highway").map(|s| s.as_str()) {
-            Some("motorway") => Color::rgb(0.9, 0.5, 0.1),
-            Some("trunk") => Color::rgb(0.9, 0.4, 0.1),
-            Some("primary") => Color::rgb(0.9, 0.3, 0.1),
-            Some("secondary") => Color::rgb(0.7, 0.3, 0.3),
-            Some("tertiary") => Color::rgb(0.6, 0.4, 0.4),
-            Some("residential") => Color::rgb(0.5, 0.5, 0.5),
-            Some("service") => Color::rgb(0.4, 0.6, 0.6),
-            Some("unclassified") => Color::rgb(0.7, 0.7, 0.7),
-            Some("cycleway") => Color::rgb(0.8, 0.6, 0.2),
-            Some("footway") => Color::rgb(0.3, 0.1, 0.0),
-            _ => Color::rgb(0.5, 0.5, 0.5),
+        let base_color = if let Some(color) = tags.0.get("colour").and_then(|s| Color::hex(s).ok())
+        {
+            color
+        } else if tags.0.get("footway").is_some_and(|f| f == "crossing") {
+            color(COLORS.base)
+        } else {
+            match tags.0.get("highway").map(|s| s.as_str()) {
+                Some("motorway") => color(COLORS.peach),
+                Some("trunk") => color(COLORS.yellow),
+                Some("primary") => color(COLORS.yellow),
+                Some("secondary") => color(COLORS.rosewater),
+                Some("tertiary") => color(COLORS.rosewater),
+                Some("residential") => color(COLORS.text),
+                Some("service") => color(COLORS.text),
+                Some("unclassified") => color(COLORS.text),
+                Some("cycleway") => color(COLORS.maroon),
+                Some("footway") => color(COLORS.flamingo),
+                _ => color(COLORS.text),
+            }
         };
 
         let mut cmds = commands.entity(entity);

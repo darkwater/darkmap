@@ -1,4 +1,4 @@
-use std::f32::consts::FRAC_PI_4;
+use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
 
 use bevy::{
     prelude::*,
@@ -105,16 +105,40 @@ pub fn decorate_building(
         vertices.extend(exterior.iter().circular_tuple_windows().flat_map(|(a, b)| {
             [[a.x, 0., a.y], [a.x, height, a.y], [b.x, 0., b.y], [b.x, height, b.y]]
         }));
-        normals.extend(
-            exterior
-                .iter()
-                .map(|v| Vec3::new(v.x, 0., v.y))
-                .circular_tuple_windows()
-                .flat_map(|(a, b)| {
-                    let normal = (b - a).normalize().cross(Vec3::Y);
-                    [[normal.x, normal.y, normal.z]; 4]
-                }),
-        );
+        let mut wall_normals = exterior
+            .iter()
+            .map(|v| Vec3::new(v.x, 0., v.y))
+            .circular_tuple_windows()
+            .circular_tuple_windows()
+            .flat_map(|((y, z), (a, b), (c, d))| {
+                let this_normal = (b - a).normalize().cross(Vec3::Y);
+
+                let prev_normal = (z - y).normalize().cross(Vec3::Y);
+                let next_normal = (d - c).normalize().cross(Vec3::Y);
+
+                let prev_align = prev_normal.dot(this_normal);
+                let next_align = next_normal.dot(this_normal);
+
+                let start_normal = if prev_align > 0.9 {
+                    (prev_normal + this_normal).normalize()
+                } else {
+                    this_normal
+                };
+
+                let end_normal = if next_align > 0.9 {
+                    (next_normal + this_normal).normalize()
+                } else {
+                    this_normal
+                };
+
+                let start_normal = [start_normal.x, start_normal.y, start_normal.z];
+                let end_normal = [end_normal.x, end_normal.y, end_normal.z];
+
+                [start_normal, start_normal, end_normal, end_normal]
+            })
+            .collect_vec();
+        wall_normals.rotate_right(4);
+        normals.extend_from_slice(&wall_normals);
         outline_normals.extend_from_slice(
             &outline_normals
                 .iter()

@@ -12,6 +12,7 @@ use crate::{
     overpass::{Element, Tags},
     ui::label::Label,
     viewport::view_distance::ViewDistance,
+    SUBWAY_DEPTH,
 };
 
 #[derive(Default)]
@@ -56,7 +57,10 @@ impl LoadType for PointOfInterest {
 }
 
 fn decorate_poi(
-    query: Query<(Entity, &Tags), (With<DecorateRequest>, With<PointOfInterest>)>,
+    mut query: Query<
+        (Entity, &Tags, &mut Transform),
+        (With<DecorateRequest>, With<PointOfInterest>),
+    >,
     assets: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -68,11 +72,15 @@ fn decorate_poi(
 
     let font = assets.load("fonts/NotoSansJP-Regular.ttf");
 
-    for (entity, tags) in query.iter().take(1000) {
+    for (entity, tags, mut transform) in query.iter_mut().take(1000) {
         let font = font.clone();
 
         let mut mesh = Mesh::from(shape::UVSphere { radius: 1., sectors: 4, stacks: 2 });
         let _res = mesh.generate_outline_normals();
+
+        if tags.0.get("subway").is_some() {
+            transform.translation.y = SUBWAY_DEPTH;
+        }
 
         let mut cmds = commands.entity(entity);
         cmds.remove::<DecorateRequest>().insert((
@@ -130,6 +138,10 @@ fn move_up(
     mut commands: Commands,
 ) {
     for (poi_ent, poi_pos, mut poi_transform) in &mut pois {
+        if poi_transform.translation.y != 0. {
+            continue;
+        }
+
         for (building_ent, building_transform, building, tags) in &buildings {
             if building.geometry.contains(&poi_pos.0) {
                 poi_transform.translation -= building_transform.translation;

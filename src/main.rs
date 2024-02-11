@@ -23,7 +23,7 @@ use bevy::{
 use bevy_egui::EguiPlugin;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
-use catppuccin::{Flavour, FlavourColours};
+use catppuccin::{Colour, Flavour, FlavourColours};
 
 use self::{
     buildings::BuildingsPlugin, debug::DebugPlugin, poi::PoiPlugin, roads::RoadsPlugin,
@@ -31,6 +31,12 @@ use self::{
 };
 
 const COLORS: FlavourColours = Flavour::Frappe.colours();
+
+const SUBWAY_DEPTH: f32 = -20.;
+
+fn color(color: Colour) -> Color {
+    Color::rgba_u8(color.0, color.1, color.2, 255)
+}
 
 fn main() {
     App::new()
